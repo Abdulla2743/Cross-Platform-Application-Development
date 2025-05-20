@@ -3,10 +3,10 @@
 A Flutter application demonstrating CRUD operations using Back4App as the backend.
 
 # Assignment document
-[https://github.com/vissharm/assignement_flutter_cpad/blob/master/CrossPlatformAssignmentFinal.pdf](https://github.com/vissharm/assignement_flutter_cpad/blob/master/CrossPlatformAssignmentFinal.pdf)
+[MyCrossPlatformAssignment.pdf]
 
 # Demo recording
-https://youtu.be/RZABm8SFpk4
+[Click Here](https://drive.google.com/file/d/1ty8edBCyOsAl5mTSeUMUva7pgEStgZs6/view?usp=drive_link)
 
 ## Features
 
@@ -25,12 +25,7 @@ https://youtu.be/RZABm8SFpk4
    - Create, Read, Update, Delete (CRUD) operations
    - List view with created Notes
 
-  
-## Screenshots
-![image](https://github.com/user-attachments/assets/067e04ae-100b-4e7a-858a-d4e3d213b7aa)
-![image](https://github.com/user-attachments/assets/14bfa409-e8b2-4766-a85a-d00601637b0b)
-![image](https://github.com/user-attachments/assets/651a6336-84bd-4dca-85ad-f7a721e6f238)
-![image](https://github.com/user-attachments/assets/0daffa0a-f860-4af7-9f0c-a4e6eae36ef0)
+
 
 ## Development Steps
 
