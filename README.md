@@ -4,9 +4,6 @@ A Flutter application demonstrating CRUD operations using Back4App as the backen
 
 # Assignment document
 [https://github.com/vissharm/assignement_flutter_cpad/blob/master/CrossPlatformAssignmentFinal.pdf](https://github.com/vissharm/assignement_flutter_cpad/blob/master/CrossPlatformAssignmentFinal.pdf)
-### Note:  Do click "more pages" again and again at the bottom of page to see all pages of slide document.
-
-# FOR COURSE STUDENTS: CAUTION: REPO IS MADE PUBLIC FOR EVALUATION, SO DO NOT COPY, ALREADY SUBMITTED AND SENT TO PROFESSOR. FEEL FREE TO LEARN FROM IT AND APPLY CONCEPTS. ALWAYS APPRECIATE KNOWLEDGE SHARING.
 
 # Demo recording
 https://youtu.be/RZABm8SFpk4
@@ -18,18 +15,16 @@ https://youtu.be/RZABm8SFpk4
    - Session management handled by Parse SDK
    - Auto-logout on session expiration
 
-2. **Employee Management**
+2. **Task Management**
    - Create, Read, Update, Delete (CRUD) operations
-   - List view with employee details
-   - Form validation
+   - List view with created task details
+   - Form validation for title
    - **(Note: Confirmation dialogs for delete operations are not implemented)**
 
-3. **Notification System**
-   - Basic notification display for CRUD operations
-   - Notification history with timestamps using `timeago` package
-   - Notification count badge
-   - 24-hour notification display filter
-   - Local storage using `SharedPreferences`
+3. **Notes Management**
+   - Create, Read, Update, Delete (CRUD) operations
+   - List view with created Notes
+
   
 ## Screenshots
 ![image](https://github.com/user-attachments/assets/067e04ae-100b-4e7a-858a-d4e3d213b7aa)
@@ -41,8 +36,8 @@ https://youtu.be/RZABm8SFpk4
 
 1. Create a new Flutter project:
 ```bash
-flutter create assignement_flutter_cpad
-cd assignement_flutter_cpad
+flutter create cdp_project
+cd cdp_project
 ```
 
 2. Add required dependencies in `pubspec.yaml`:
@@ -50,10 +45,12 @@ cd assignement_flutter_cpad
 dependencies:
   flutter:
     sdk: flutter
-  parse_server_sdk_flutter: ^7.0.0
-  crypto: ^3.0.3
-  shared_preferences: ^2.2.0
-  timeago: ^3.5.0
+  parse_server_sdk_flutter: ^9.0.0
+  flutter_secure_storage: ^9.2.4
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+
 ```
 
 3. Install dependencies:
@@ -65,23 +62,27 @@ flutter pub get
    - Create an account on [Back4App](https://www.back4app.com/)
    - Create a new app
    - Get Application ID and Client Key from Security & Keys
-   - Create "Employee" class with columns:
-     - `name` (String)
-     - `email` (String)
-     - `position` (String)
-     - `salary` (Number)
+   - Create "Task" class with columns:
+     - `title` (String)
+     - `description` (String)
+     - `isDone` (boolean)
+   - Create "Note" class with columns:
+     - `title` (String)
+     - `Content`(String)
+     - `Category`(String)
    - Create "User" class (automatically created by Back4App)
      - `username` (String)
      - `password` (String)
      - `email` (String)
 
 5. Configure Back4App credentials:
-   Create `lib/config/back4app_config.dart`:
+   Create `lib/back4app_config.dart`:
 ```dart
 class Back4AppConfig {
-  static const String applicationId = 'YOUR_APP_ID';
-  static const String clientKey = 'YOUR_CLIENT_KEY';
+  static const String applicationId = 'Quux7KtEBWzReYSb091C9HPuET9hmMM96wWaarNshM';
+  static const String clientKey = 'ynLZ4mzRiSt7duOaRfWaZAioDB2pcEWPaaeQ0PTobs';
   static const String serverUrl = 'https://parseapi.back4app.com';
+  static const String liveQueryUrl = 'wss://cdp_project.b4a.io';
 }
 ```
 
@@ -91,147 +92,48 @@ class Back4AppConfig {
 
 ```
 lib/
-├── config/
-│   ├── back4app_config.dart    # Back4App credentials and configuration
-│   └── app_config.dart         # Application-wide configuration
+├── back4app_config.dart        # Back4App credentials and configuration
 ├── models/
-│   ├── employee.dart           # Employee data model
-│   └── notification_item.dart  # Notification data model
-├── services/
-│   ├── auth_service.dart       # Authentication handling
-│   ├── employee_service.dart   # Employee CRUD operations
-│   └── notification_service.dart # Notification management
+│   ├── note.dart           # Notes data model
+│   └── task.dart           # Task data model
+├── utils/
+│   └── constants.dart         # Custom Style handling
 ├── screens/
-│   ├── auth/
-│   │   ├── login_screen.dart   # Login screen
-│   │   └── signup_screen.dart  # Signup screen
-│   ├── employee/
-│   │   ├── employee_list_screen.dart  # Employee listing
-│   │   └── employee_form_screen.dart  # Add/Edit employee
-│   └── notification/
-│       └── notification_history_screen.dart # Notification history
+│   ├── home_screen.dart      # Home Screen
+│   ├── login_screen.dart     # Login Screen
+│   └── signup_screen.dart    # SignUp Screen     
 ├── widgets/
-│   ├── common/
-│   │   ├── loading_indicator.dart
-│   │   └── error_dialog.dart
-│   ├── employee/
-│   │   ├── employee_card.dart
-│   │   └── employee_list_item.dart
-│   └── notification/
-│       ├── notification_badge.dart
-│       └── notification_item_widget.dart
+│   └── custom_widgets.dart   # Widgets
 └── main.dart                   # Application entry point
+
 ```
 
 ### Data Models
 
-1. **Employee Model**
+1. **Note Model**
 ```dart
-class Employee {
-  final String id;
-  final String name;
-  final String email;
-  final String position;
-  final double salary;
+class Note {
+  final String title;
+  final String content;
+  final String category;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   
   // Constructor and methods
 }
 ```
 
-2. **Notification Model**
+2. **Task Model**
 ```dart
-class NotificationItem {
+class Task {
   final String message;
-  final NotificationType type;
-  final DateTime timestamp;
-  final bool isRead;
+  final String description;
+  final bool isDone;
   
   // Constructor and methods
 }
 ```
 
-### Service Layer
-
-1. **Authentication Service**
-```dart
-class AuthService {
-  Future<User> login(String username, String password);
-  Future<User> signup(String username, String password, String email);
-  Future<void> logout();
-  bool isAuthenticated();
-}
-```
-
-2. **Employee Service**
-```dart
-class EmployeeService {
-  Future<List<Employee>> getEmployees();
-  Future<Employee> getEmployee(String id);
-  Future<Employee> createEmployee(Employee employee);
-  Future<Employee> updateEmployee(Employee employee);
-  Future<void> deleteEmployee(String id);
-}
-```
-
-3. **Notification Service**
-```dart
-class NotificationService {
-  Future<void> addNotification(NotificationItem notification);
-  Future<List<NotificationItem>> getNotifications();
-  Future<void> markAsRead(String notificationId);
-  Future<void> clearOldNotifications();
-}
-```
-
----
-
-## Technical Architecture
-
-### Updated Data Flow Diagram
-
-```mermaid
-graph TD
-    A[UI Layer] -->|User Actions| B[AuthService]
-    A -->|CRUD Operations| C[EmployeeService]
-    A -->|Notifications| D[NotificationService]
-    
-    subgraph "UI Layer"
-    A1[Login/Signup Screens]
-    A2[Employee List Screen]
-    A3[Notification History Screen]
-    end
-
-    subgraph "Service Layer"
-    B[AuthService]
-    C[EmployeeService]
-    D[NotificationService]
-    
-    %% Session Validation Flow
-    C -->|Validate Session| B
-    D -->|Validate Session| B
-    B -->|Session Status| C
-    B -->|Session Status| D
-    end
-
-    subgraph "Backend"
-    E[Back4App]
-    F[User Management]
-    G[Employee Data]
-    H[ACL Management]
-    
-    E --> F
-    E --> G
-    E --> H
-    end
-
-    B -->|Session Tokens| E
-    C -->|Employee Data + ACL| E
-    D -->|Local Storage| I[SharedPreferences]
-
-    %% Error Flows
-    E -->|Invalid Session| B
-    B -->|Auto Logout| A
-```
 
 ---
 
@@ -268,72 +170,139 @@ Authentication is handled entirely through Back4App's Parse Server SDK:
 
 1. **User Authentication**
 ```dart
-// lib/services/auth_service.dart
-Future<ParseResponse> login(String email, String password) async {
-  try {
-    final user = ParseUser(email, password, email);
-    final response = await user.login();
-    return response;
-  } catch (e) {
-    print('Login exception: $e');
-    final response = ParseResponse();
-    response.error = ParseError(
-      code: -1,
-      message: 'Login failed: ${e.toString()}',
-    );
-    return response;
-  }
-}
-```
+// lib/screens/login_screen.dart
+Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
 
-2. **Session Management**
-```dart
-// lib/services/auth_service.dart
-Future<bool> isLoggedIn() async {
-  try {
-    final user = await ParseUser.currentUser();
-    if (user != null) {
-      //Validate session token
-      final response = await ParseUser.getCurrentUserFromServer(user.sessionToken);
-      if (response != null) {
-        return response.success;
+    setState(() {
+      _isLoading = true;
+    });
+
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    try {
+      final user = ParseUser(username, password, null);
+      final response = await user.login();
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome back, ${user.username}!'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.error!.message),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to login: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
-    return false;
-  } catch (e) {
-    return false;
   }
-}
+
 ```
 
-3. **User Registration**
+2. **SignUp Management**
 ```dart
-// lib/services/auth_service.dart
-Future<ParseResponse> signUp(String email, String password) async {
-  final user = HRUser(
-    username: email,
-    password: password.trim(),
-    emailAddress: email,
-  );
-  return await user.signUp();
-}
+// lib/screens/SignUp_screen.dart
+Future<void> _signup() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    try {
+      final user = ParseUser.createUser(username, password, email);
+      final response = await user.signUp();
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully! Please login.'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.error!.message),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to sign up: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 ```
 
-4. **Logout Handling**
+3. **Logout Handling**
 ```dart
-// lib/services/auth_service.dart
-Future<bool> logout() async {
-  try {
-    final user = await ParseUser.currentUser();
-    if (user != null) {
-      await user.logout();
-      return true;
+// lib/screens/home_screen.dart
+Future<void> _logout() async {
+    if (_currentUser == null) return;
+
+    try {
+      final response = await _currentUser!.logout();
+      if (response.success) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+              (route) => false,
+        );
+      } else {
+        _showErrorSnackBar(response.error!.message);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to logout: ${e.toString()}');
     }
-    return false;
-  } catch (e) {
-    throw Exception('Logout failed: $e');
   }
-}
 ```
 
 ### Security Features
@@ -377,21 +346,24 @@ The Parse SDK is initialized in the application's entry point:
 
 ```dart
 // lib/main.dart
-await Parse().initialize(
-  Back4AppConfig.applicationId,
-  Back4AppConfig.serverUrl,
-  clientKey: Back4AppConfig.clientKey,
-  debug: true,
-);
+ // Initialize Parse
+  await Parse().initialize(
+    Back4AppConfig.applicationId,
+    Back4AppConfig.serverUrl,
+    clientKey: Back4AppConfig.clientKey,
+    debug: true, // Set to false in production
+    liveQueryUrl: Back4AppConfig.liveQueryUrl,
+  );
 ```
 
 Configuration is managed through:
 ```dart
-// lib/config/back4app_config.dart
+// lib/back4app_config.dart
 class Back4AppConfig {
-  static const String applicationId = 'YOUR_APP_ID';
-  static const String clientKey = 'YOUR_CLIENT_KEY';
+  static const String applicationId = 'Quux7KtEBWzReYSb091C9HPuET9hmMM96wWrNshM';
+  static const String clientKey = 'ynLZ4mzRiSt7duOaRfWaZAioDB2pcEWPeQ0PTobs';
   static const String serverUrl = 'https://parseapi.back4app.com';
+  static const String liveQueryUrl = 'wss://cdp_project.b4a.io';
 }
 ```
 
@@ -403,27 +375,148 @@ class Back4AppConfig {
 - Email and password authentication
 - Form validation:
 ```dart
-TextFormField(
-  controller: _emailController,
-  decoration: InputDecoration(
-    labelText: 'Email',
-    prefixIcon: const Icon(Icons.email),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-  ),
-  validator: (value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your email';
-    }
-    return null;
-  },
-)
+Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // App Logo
+                  Icon(
+                    Icons.task_alt,
+                    size: 80,
+                    color: AppColors.primary,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // App Name
+                  Text(
+                    'TaskyNote',
+                    style: AppStyles.heading1.copyWith(
+                      fontSize: 32,
+                      color: AppColors.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'Login to your account',
+                    style: AppStyles.caption.copyWith(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // Login Form
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Username
+                        TextFormField(
+                          controller: _usernameController,
+                          decoration: AppStyles.textFieldDecoration.copyWith(
+                            labelText: 'Username',
+                            prefixIcon: const Icon(Icons.person_outline),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your username';
+                            }
+                            return null;
+                          },
+                          keyboardType: TextInputType.text,
+                          textInputAction: TextInputAction.next,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Password
+                        TextFormField(
+                          controller: _passwordController,
+                          decoration: AppStyles.textFieldDecoration.copyWith(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                color: AppColors.textSecondary,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          obscureText: _obscurePassword,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            return null;
+                          },
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _login(),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Login Button
+                        SizedBox(
+                          height: 50,
+                          child: LoadingButton(
+                            isLoading: _isLoading,
+                            text: 'Login',
+                            onPressed: _login,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Sign Up Button
+                        SizedBox(
+                          height: 50,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => SignupScreen()),
+                              );
+                            },
+                            child: Text(
+                              'Don\'t have an account? Sign up',
+                              style: TextStyle(color: AppColors.primary),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 ```
 - Loading state handling during authentication
 - Error message display
 - Navigation to signup screen
-- Successful login redirects to Employee List Screen
+- Successful login redirects to Task List Screen
 
 #### Signup Screen (`lib/screens/signup_screen.dart`)
 - User registration form
@@ -432,107 +525,188 @@ TextFormField(
   - Password requirements
 - Success/Error notifications
 ```dart
-Future<void> _signup() async {
-  if (_formKey.currentState!.validate()) {
-    setState(() => _isLoading = true);
-    try {
-      final response = await _authService.signUp(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: const CustomAppBar(title: 'Create Account'),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(
+                  Icons.person_add,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
 
-      if (response.success && mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully! Please login.'),
-            backgroundColor: Colors.green,
+                const SizedBox(height: 16),
+
+                Text(
+                  'Join TaskyNote',
+                  style: AppStyles.heading2,
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'Create your account to get started',
+                  style: AppStyles.caption,
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 32),
+
+                // Username
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: AppStyles.textFieldDecoration.copyWith(
+                    labelText: 'Username',
+                    prefixIcon: const Icon(Icons.person_outline),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a username';
+                    }
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  decoration: AppStyles.textFieldDecoration.copyWith(
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Password
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: AppStyles.textFieldDecoration.copyWith(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: AppColors.textSecondary,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscurePassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Confirm Password
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  decoration: AppStyles.textFieldDecoration.copyWith(
+                    labelText: 'Confirm Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                        color: AppColors.textSecondary,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscureConfirmPassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _signup(),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Sign Up Button
+                SizedBox(
+                  height: 50,
+                  child: LoadingButton(
+                    isLoading: _isLoading,
+                    text: 'Sign Up',
+                    onPressed: _signup,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Login Link
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    'Already have an account? Login',
+                    style: TextStyle(color: AppColors.primary),
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+        ),
+      ),
+    );
   }
-}
 ```
 
-### 2. Employee Management Screens
 
-#### Employee List Screen (`lib/screens/employee_list_screen.dart`)
-- Displays list of employees
-- Add/Edit/Delete operations
-- Navigation to employee form
-- Notification badge for system notifications
-```dart
-Future<void> _showEmployeeForm({Employee? employee}) async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => EmployeeFormScreen(employee: employee),
-    ),
-  );
-
-  if (result == true) {
-    await _loadEmployees();
-    if (mounted) {
-      NotificationService.showNotification(
-        context,
-        message: employee == null 
-            ? 'Employee added successfully'
-            : 'Employee updated successfully',
-      );
-    }
-  }
-}
-```
-
-#### Employee Form Screen (`lib/screens/employee_form_screen.dart`)
-- Add/Edit employee details
+#### Task Form Screen (`lib/screens/home_screen.dart`)
+- Add/Edit task details
 - Form validation for:
-  - Name (required)
-  - Email (format validation)
-  - Position (required)
-  - Salary (numeric validation)
-- Success/Error notifications
+  - title (required)
+  - description 
 
-### 3. Notification System
 
-#### Notification History Screen (`lib/screens/notification_history_screen.dart`)
-- Lists all system notifications
-- Timestamp display using `timeago` package
-- 24-hour filter for notifications
-- Read/Unread status
-- Clear notification functionality
-
-## Data Models
-
-### Employee Model
-```dart
-class Employee {
-  final String id;
-  final String name;
-  final String email;
-  final String position;
-  final double salary;
-  
-  // Constructor and methods
-}
-```
-
-### Notification Model
-```dart
-class NotificationItem {
-  final String message;
-  final NotificationType type;
-  final DateTime timestamp;
-  final bool isRead;
-  
-  // Constructor and methods
-}
-```
 
 ## Service Layer
 
@@ -542,17 +716,12 @@ class NotificationItem {
 - Login/Signup operations
 - Error handling
 
-### Employee Service
-- CRUD operations for employees
+### Task/Notes Service
+- CRUD operations for tasks and notes
 - Data validation
 - Error handling
 - Back4App integration
 
-### Notification Service
-- Notification management
-- Local storage using SharedPreferences
-- Notification filtering
-- Read status management
 
 ## Error Handling
 
@@ -575,15 +744,5 @@ class NotificationItem {
 - Error dialogs
 - Form fields with validation
 - Notification badges
-
-### Employee Widgets
-- Employee list items
-- Employee form fields
-- Action buttons (Edit/Delete)
-
-### Notification Widgets
-- Notification badge with count
-- Notification list items
-- Timestamp display
 
 
