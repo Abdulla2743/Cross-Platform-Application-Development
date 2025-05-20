@@ -3,10 +3,10 @@
 A Flutter application demonstrating CRUD operations using Back4App as the backend.
 
 # Assignment document
-[MyCrossPlatformAssignment.pdf](https://drive.google.com/file/d/1ty8edBCyOsAl5mTSeUMUva7pgEStgZs6/view?usp=drive_link)
+[MyCrossPlatformAssignment.pdf]
 
 # Demo recording
-https://youtu.be/RZABm8SFpk4
+[Click Here](https://drive.google.com/file/d/1ty8edBCyOsAl5mTSeUMUva7pgEStgZs6/view?usp=drive_link)
 
 ## Features
 
